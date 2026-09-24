@@ -1,34 +1,34 @@
 """
 api_client.py
 --------------
-Camada de conexão com APIs e Gemini (com contorno para SSL corporativo e versão de API v1).
+Camada de conexão com APIs e Gemini.
 """
 
 import os
 import time
 import requests
+import streamlit as st
 from google import genai
-from google.genai import types
 from config import API_ENDPOINTS, REQUEST_TIMEOUT
 from knowledge_base import buscar_contexto, buscar_resposta_local
 
-# Desativa alertas de requisições inseguras para o módulo requests tradicional
+# Desativa alertas de requisições inseguras para chamadas HTTP
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- CONFIGURAÇÃO DO CLIENTE GEMINI COM BYPASS DE SSL E VERSÃO V1 ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# --- RECUPERAÇÃO DA CHAVE DE API ---
+GEMINI_API_KEY = ""
+try:
+    if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+        GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    pass
 
-# Força o uso da api_version="v1" e desativa a verificação estrita de SSL do proxy corporativo
-http_options = types.HttpOptions(
-    api_version="v1",
-    client_args={"verify": False}
-)
+if not GEMINI_API_KEY:
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-client = genai.Client(
-    api_key=GEMINI_API_KEY,
-    http_options=http_options
-)
+# --- INICIALIZAÇÃO DO CLIENTE GEMINI ---
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
 def _build_headers(endpoint_config: dict) -> dict:
@@ -81,8 +81,6 @@ def _build_ai_prompt(question: str, history: list[dict] = None) -> str:
         for mensagem in mensagens_recentes
         if mensagem.get("content")
     )
-    # A pergunta atual deve pesar mais que respostas anteriores, que podem
-    # conter uma conclusao incorreta sobre a ausencia de documentos.
     contexto = buscar_contexto(f"{question}\n{contexto_busca}")
     instrucoes = (
         "Responda sempre no mesmo idioma usado na PERGUNTA. "
@@ -121,9 +119,15 @@ def stream_message_to_ai(question: str, history: list[dict] = None):
         yield resposta_local
         return
 
-    for tentativa in range(2):
+    if not client:
+        yield "A chave de API GEMINI_API_KEY não está configurada nos Secrets do Streamlit."
+        return
+
+    modelos = ["gemini-1.5-flash", "gemini-1.5-pro"]
+
+    for modelo in modelos:
         try:
-            chat = client.chats.create(model="gemini-1.5-flash")
+            chat = client.chats.create(model=modelo)
             response_stream = chat.send_message_stream(
                 message=_build_ai_prompt(question, history),
             )
@@ -133,11 +137,12 @@ def stream_message_to_ai(question: str, history: list[dict] = None):
                 if texto:
                     encontrou_texto = True
                     yield texto
-            if not encontrou_texto:
-                yield "⚠️ O modelo não retornou nenhum texto."
-            return
+            if encontrou_texto:
+                return
         except Exception as e:
             erro = str(e)
+            print(f"[ERRO GEMINI] Modelo: {modelo} | Detalhe: {erro}")
+            
             if "429" in erro or "RESOURCE_EXHAUSTED" in erro:
                 resposta_local = buscar_resposta_local(question)
                 if resposta_local:
@@ -146,29 +151,29 @@ def stream_message_to_ai(question: str, history: list[dict] = None):
                 yield "No momento, o assistente está temporariamente sem cota para consultar a IA."
                 return
 
-            erro_temporario = "503" in erro or "UNAVAILABLE" in erro
-            if tentativa == 0 and erro_temporario:
+            if "503" in erro or "UNAVAILABLE" in erro:
                 time.sleep(1)
                 continue
-            resposta_local = buscar_resposta_local(question)
-            if resposta_local:
-                yield resposta_local
-                return
-            yield (
-                "Não foi possível consultar o assistente neste momento. "
-                "Tente novamente em instantes ou informe que não conseguiu resolver "
-                "para iniciarmos o atendimento do Help Desk."
-            )
-            return
+
+    resposta_local = buscar_resposta_local(question)
+    if resposta_local:
+        yield resposta_local
+        return
+        
+    yield (
+        "Não foi possível consultar o assistente neste momento. "
+        "Tente novamente em instantes ou informe que não conseguiu resolver "
+        "para iniciarmos o atendimento do Help Desk."
+    )
 
 
 def send_message_to_ai(question: str, history: list[dict] = None) -> str:
-    """Mantem uma versao sincrona para chamadas existentes."""
+    """Versão síncrona."""
     return "".join(stream_message_to_ai(question, history))
 
 
 def get_next_resolution(question: str, history: list[dict], attempts: list[str]) -> str:
-    """Solicita uma proxima orientacao do KB sem repetir tentativas anteriores."""
+    """Propõe próxima orientação sem repetir as tentativas anteriores."""
     tentativas = "\n".join(f"- {tentativa}" for tentativa in attempts) or "- nenhuma"
     prompt = (
         "O usuario informou que a orientacao anterior nao resolveu o problema. "
