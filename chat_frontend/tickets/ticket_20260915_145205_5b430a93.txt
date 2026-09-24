@@ -1,0 +1,12 @@
+Daimler Truck - Ticket de atendimento
+Data: 2026-09-15T14:52:05
+
+Nome: phillipe lima oliveira dos santos
+Problema principal: vc sabe algum software para pdf?
+Hostname da maquina: hostname123
+Impede diretamente o trabalho: sim, preciso fazer um pdf mas n consigo
+Afeta outras pessoas: não
+Localizacao: ebony, 6º andar, sala ODC-D
+Contato: phillipe.oliveiradossantos@Cognizant.com
+Orientacoes ja tentadas:
+

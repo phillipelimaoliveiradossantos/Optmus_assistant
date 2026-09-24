@@ -1,0 +1,12 @@
+Daimler Truck - Ticket de atendimento
+Data: 2026-09-14T09:45:29
+
+Nome: phillipe
+Problema principal: hi how can i make a password reset?
+Hostname da maquina: hostname pc
+Impede diretamente o trabalho: sim
+Afeta outras pessoas: não
+Localizacao: ebony, 6º andar, odc-d
+Contato: phillipe.oliveiradossantos@Cognizant.com
+Orientacoes ja tentadas:
+

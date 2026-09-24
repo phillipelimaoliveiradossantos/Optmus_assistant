@@ -1,0 +1,12 @@
+Daimler Truck - Ticket de atendimento
+Data: 2026-09-17T07:56:53
+
+Nome: Phillipe Lima Oliveira dos Santos
+Problema principal: [Rede | Prioridade: Urgente] nao consigo acessar o windows: windows não abre
+Hostname da maquina: hostname 
+Impede diretamente o trabalho: sim
+Afeta outras pessoas: nao
+Localizacao: ebony
+Contato: 11945957447
+Orientacoes ja tentadas:
+ligar e desligar a máquina
