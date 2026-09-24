@@ -32,6 +32,7 @@ from pathlib import Path
 
 from PIL import Image
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit.web import cli as stcli
 
 from api_client import call_api, get_next_resolution, stream_message_to_ai
@@ -46,6 +47,25 @@ st.set_page_config(
     page_icon="⛟",
     layout="wide",
     initial_sidebar_state="collapsed",  # menu começa fechado (estilo hambúrguer)
+)
+
+# Injeta o script JS para fechar o menu lateral ao clicar fora dele
+components.html(
+    """
+    <script>
+    const doc = window.parent.document;
+    doc.addEventListener('click', function(e) {
+        const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+        const sidebarNav = doc.querySelector('button[aria-label="Close sidebar"]') || doc.querySelector('button[aria-label="Fechar barra lateral"]');
+        if (sidebar && !sidebar.contains(e.target) && sidebarNav && sidebar.getAttribute('aria-expanded') === 'true') {
+            // Se o clique for fora da sidebar, simula o clique para fechar
+            sidebarNav.click();
+        }
+    }, true);
+    </script>
+    """,
+    height=0,
+    width=0,
 )
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -71,7 +91,7 @@ TEMAS = {
     "claro": {
         "app_bg": "#FDFDFD",
         "sidebar_bg": "#FFFFFF",
-        "sidebar_text": "#000000",  # <-- Cor do texto/título da sidebar no Tema Claro
+        "sidebar_text": "#000000",  # Cor do texto/título da sidebar no Tema Claro
         "text": "#FFFFFF",
         "subtext": "#FFFFFF",
         "button_bg": "#A4A2A2",
@@ -79,18 +99,18 @@ TEMAS = {
         "input_text": "#FFFFFF",
         "border": "#A4A2A2",
         "icon_color": "#111111",
-        "black": "#ffffff", #
+        "black": "#ffffff",
         "send_button_bg": "#FFFFFF",
         "send_button_icon": "#111111",
         "menu": "#FFFFFF",
-        "background": "#A4A2A2", #cor parra o fundo do input (chat)
+        "background": "#A4A2A2", # cor para o fundo do input (chat)
         "idioma_fundo": "#FFFFFF",
         "idioma_texto": "#111111"
     },
     "escuro": {
         "app_bg": "#FFFFFF",
         "sidebar_bg": "#030303",
-        "sidebar_text": "#FFFFFF",  # <-- Cor do texto/título da sidebar no Tema Escuro
+        "sidebar_text": "#FFFFFF",  # Cor do texto/título da sidebar no Tema Escuro
         "text": "#000000",
         "subtext": "#000000",
         "button_bg": "#4B4B4B",
@@ -294,9 +314,8 @@ AUTH_TEXTS = {
     },
 }
 
-
 # ---------------------------------------------------------------------------
-# ESTADO DA SESSÃO
+# ESTADO DA SESSÃO E MÉTODOS AUXILIARES
 # ---------------------------------------------------------------------------
 
 def init_state():
@@ -773,575 +792,13 @@ def aplicar_estilo():
         [data-testid="stAppViewContainer"] > .main {{
             padding-top: 0 !important;
         }}
-
-        [data-testid="stAppViewContainer"] {{
-            background-color: {tema['black']};
-        }}
-
-        [data-testid="stHeader"] {{
-            background: rgba(0,0,0,0);
-            position: relative;
-            z-index: 3;
-            height: 2.5rem !important;
-            min-height: 2.5rem !important;
-        }}
-
-        [data-testid="stChatMessage"] {{
-            padding: 0.8rem 1.1rem !important;
-            margin-bottom: 0.9rem !important;
-            border-radius: 14px !important;
-            font-size: 1.05rem !important;
-            line-height: 1.5 !important;
-            background-color: rgba(255, 255, 255, 0.92) !important;
-            border: 1px solid rgba(0, 0, 0, 0.1) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-            backdrop-filter: blur(8px) !important;
-            
-            /* Define que o balão terá o tamanho equivalente ao texto */
-            width: fit-content !important;
-            max-width: 80% !important; /* Limita para não ultrapassar a tela */
-        }}
-
-        [data-testid="stChatMessage"],
-        [data-testid="stChatMessage"] p,
-        [data-testid="stChatMessage"] li,
-        [data-testid="stChatMessage"] span {{
-            color: #000000 !important;
-        }}
-
-        [data-testid="stChatMessage"] p {{
-            font-size: 1.05rem !important;
-            line-height: 1.5 !important;
-        }}
-
-        [data-testid="stBottom"],
-        [data-testid="stBottomBlockContainer"] {{
-            background: transparent !important;
-            background-color: {tema['menu']} !important;
-            backdrop-filter: none !important;
-            box-shadow: none !important;
-            border: none !important;
-        }}
-
-        [data-testid="stChatInput"],
-        [data-testid="stChatInputContainer"],
-        [data-testid="stChatInput"] > div,
-        [data-testid="stChatInput"] div[data-baseweb="textarea"],
-        [data-testid="stChatInput"] div[data-baseweb="input"] {{
-            background-color:{tema['background']} !important;
-            border: 1px solid {tema['border']} !important;
-            border-radius: 16px !important;
-            padding: 4px 8px !important;
-        }}
-
-        [data-testid="stChatInput"] textarea,
-        [data-testid="stChatInput"] textarea:focus {{
-            background-color: {tema['background']} !important;
-            color: {tema['input_text']} !important;
-            -webkit-text-fill-color: {tema['input_text']} !important;
-        }}
-
-        [data-testid="stChatInput"] textarea::placeholder {{
-            color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-            opacity: 0.55;
-        }}
-
-        [data-testid="stChatInput"] button {{
-            background-color: {tema['send_button_bg']} !important;
-            border-radius: 10px !important;
-            border: none !important;
-        }}
-
-        [data-testid="stChatInput"] button svg {{
-            fill: {tema['send_button_icon']} !important;
-            color: {tema['send_button_icon']} !important;
-        }}
-
-        /* ---- SIDEBAR ESTILIZAÇÃO ---- */
-        section[data-testid="stSidebar"] {{
-            background-color: {tema['menu']};
-            border-right: 1px solid {tema['border']};
-            position: relative;
-            z-index: 99;
-        }}
-
-        /* Cor dos títulos e textos na barra lateral */
-        section[data-testid="stSidebar"] h1,
-        section[data-testid="stSidebar"] h2,
-        section[data-testid="stSidebar"] h3,
-        section[data-testid="stSidebar"] p,
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] div {{
-            color: {tema['sidebar_text']} !important;
-        }}
-
-        section[data-testid="stSidebar"] button {{
-            background-color: {tema['button_bg']} !important;
-            color: {tema['button_text']} !important;
-            border: 1px solid {tema['border']} !important;
-        }}
-
-        section[data-testid="stSidebar"] button * {{
-            color: {tema['button_text']} !important;
-        }}
-
-        .st-key-sidebar_header {{
-            margin-top: -0.35rem !important;
-            padding: 0 !important;
-        }}
-
-        .st-key-sidebar_header [data-testid="stHorizontalBlock"] {{
-            align-items: center !important;
-            gap: 0.25rem !important;
-        }}
-
-        .st-key-sidebar_header [data-testid="column"]:last-child {{
-            margin-right: 1.8rem !important;
-        }}
-
-        .st-key-sidebar_header h1 {{
-            margin: 0 !important;
-            font-size: 1.55rem !important;
-            line-height: 1.2 !important;
-            white-space: nowrap !important;
-        }}
-
-        .st-key-logout_button button,
-        .st-key-profile_button button {{
-            min-height: 1.8rem !important;
-            width: 1.8rem !important;
-            height: 1.8rem !important;
-            padding: 0 !important;
-            background: {tema['menu']} !important;
-            border: none !important;
-            border-radius: 0.55rem !important;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, .22) !important;
-            font-size: 0.95rem !important;
-            line-height: 1 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }}
-
-        .st-key-logout_button button:hover,
-        .st-key-profile_button button:hover {{
-            background: {tema['menu']} !important;
-            transform: none !important;
-            box-shadow: 0 1px 7px rgba(0, 0, 0, .34) !important;
-        }}
-
-        .st-key-apagar_historico button {{
-            background: {tema['menu']} !important;
-            border: none !important;
-            box-shadow: none !important;
-            color: {tema['sidebar_text']} !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 3rem !important;
-            height: 3rem !important;
-            min-height: 3rem !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            font-size: 1.8rem !important;
-            line-height: 1 !important;
-            transition: transform 160ms ease, color 160ms ease !important;
-        }}
-
-        section[data-testid="stSidebar"] .st-key-apagar_historico,
-        section[data-testid="stSidebar"] .st-key-apagar_historico > div,
-        section[data-testid="stSidebar"] .st-key-apagar_historico button {{
-            background-color: {tema['menu']} !important;
-            background: {tema['menu']} !important;
-            border-color: transparent !important;
-        }}
-
-        .st-key-apagar_historico button p {{
-            line-height: 1 !important;
-            overflow: visible !important;
-            filter: {filtro_lixeira} !important;
-        }}
-
-        .st-key-apagar_historico {{
-            display: flex !important;
-            align-items: center !important;
-            justify-content: flex-end !important;
-            margin-top: -0.35rem !important;
-        }}
-
-        .st-key-apagar_historico button:hover {{
-            background: {tema['menu']} !important;
-            color: {tema['sidebar_text']} !important;
-            transform: none !important;
-            box-shadow: none !important;
-        }}
-
-        .st-key-apagar_historico button:hover p {{
-            color: {tema['sidebar_text']} !important;
-            filter: {filtro_lixeira} !important;
-        }}
-
-        .st-key-apagar_historico button:focus-visible {{
-            outline: 2px solid {tema['sidebar_text']} !important;
-            outline-offset: 2px;
-        }}
-
-        .history-title {{
-            margin: -0.25rem 0 0 !important;
-            font-size: 18px !important;
-            line-height: 3rem !important;
-            color: {tema['sidebar_text']} !important;
-        }}
-
-        .st-key-chat_language_selector,
-        .st-key-ticket_language_selector {{
-            width: 4.2rem !important;
-            min-width: 4.2rem !important;
-            max-width: 4.2rem !important;
-            padding: 0 !important;
-        }}
-
-        .st-key-chat_language_selector {{
-            margin-top: -2.6rem !important;
-            transform: translateY(-6.4rem) !important;
-        }}
-
-        .st-key-ticket_language_selector {{
-            margin-top: 0 !important;
-        }}
-
-        .st-key-chat_language_selector > div,
-        .st-key-ticket_language_selector > div {{
-            width: 4.2rem !important;
-            max-width: 4.2rem !important;
-        }}
-
-        .st-key-chat_language_selector > div {{
-            margin-top: 0 !important;
-        }}
-
-        .st-key-ticket_language_selector > div {{
-            margin-top: 0 !important;
-        }}
-
-        .st-key-chat_language_selector,
-        .st-key-ticket_language_selector,
-        .st-key-chat_language_selector *,
-        .st-key-ticket_language_selector * {{
-            box-sizing: border-box !important;
-        }}
-
-        .st-key-chat_language_selector label,
-        .st-key-ticket_language_selector label {{
-            display: none !important;
-        }}
-
-        .st-key-chat_language_selector [data-baseweb="select"] > div,
-        .st-key-ticket_language_selector [data-baseweb="select"] > div {{
-            min-height: 2rem !important;
-            height: 2rem !important;
-            padding: 0 0.35rem !important;
-            background-color: {idioma_fundo} !important;
-            border: 1px solid {tema['border']} !important;
-            border-radius: 6px !important;
-            color: {idioma_texto} !important;
-            box-shadow: none !important;
-            outline: none !important;
-        }}
-
-        .st-key-chat_language_selector [data-baseweb="select"],
-        .st-key-chat_language_selector [data-baseweb="select"] > div,
-        .st-key-chat_language_selector [data-baseweb="select"] > div > div,
-        .st-key-ticket_language_selector [data-baseweb="select"],
-        .st-key-ticket_language_selector [data-baseweb="select"] > div,
-        .st-key-ticket_language_selector [data-baseweb="select"] > div > div {{
-            background: {idioma_fundo} !important;
-            background-color: {idioma_fundo} !important;
-        }}
-
-        [data-testid="stSelectbox"] [data-baseweb="select"],
-        [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-        [data-testid="stSelectbox"] [data-baseweb="select"] > div > div {{
-            background: {idioma_fundo} !important;
-            background-color: {idioma_fundo} !important;
-        }}
-
-        .st-key-chat_language_selector [data-baseweb="select"] span,
-        .st-key-ticket_language_selector [data-baseweb="select"] span {{
-            color: {idioma_texto} !important;
-            -webkit-text-fill-color: {idioma_texto} !important;
-        }}
-
-        .st-key-chat_language_selector svg,
-        .st-key-ticket_language_selector svg {{
-            color: {idioma_texto} !important;
-            fill: {idioma_texto} !important;
-            stroke: {idioma_texto} !important;
-        }}
-
-        .st-key-chat_language_selector [data-baseweb="select"] svg path,
-        .st-key-ticket_language_selector [data-baseweb="select"] svg path {{
-            color: {idioma_seta} !important;
-            fill: {idioma_seta} !important;
-            stroke: {idioma_seta} !important;
-            font-size: 0.7rem !important;
-        }}
-
-        [data-testid="stSidebarCollapseButton"] svg,
-        [data-testid="stSidebarCollapsedControl"] svg,
-        [data-testid="collapsedControl"] svg,
-        header button svg {{
-            fill: {tema['icon_color']} !important;
-            stroke: {tema['icon_color']} !important;
-            color: {tema['icon_color']} !important;
-        }}
-
-        [data-testid="stSidebarCollapseButton"],
-        [data-testid="stSidebarCollapseButton"] button,
-        [data-testid="stSidebarCollapsedControl"],
-        [data-testid="collapsedControl"] {{
-            cursor: pointer !important;
-            pointer-events: auto !important;
-        }}
-
-        .chat-title {{
-            font-size: 80px;
-            font-weight: 600;
-            margin-bottom: 0.2rem;
-            margin-top:-190px;
-            color: {tema['text']};
-        }}
-
-        .chat-subtitle {{
-            color: {tema['subtext']};
-            margin-bottom: 1.2rem;
-            font-size: 25px;
-            margin-top:-110px;
-        }}
-
-        div[data-testid="stButton"] button[kind="secondary"]:has(> div > p:only-child) {{
-            border: none;
-            background: transparent;
-        }}
-        .st-key-tema_toggle {{
-            background: transparent !important;
-            background-color: transparent !important;
-            border: 1px solid transparent !important;
-            border-radius: 6px !important;
-            box-shadow: none !important;
-            margin: -2.6rem 0 0 !important;
-            transform: translateY(-6.4rem) !important;
-            padding: 0 !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }}
-        .st-key-tema_toggle button {{
-            margin: 0 !important;
-            width: 2rem !important;
-            min-height: 2rem !important;
-            height: 2rem !important;
-            padding: 0 !important;
-            background: transparent !important;
-            border: none !important;
-            color: {tema_icone} !important;
-            box-shadow: none !important;
-        }}
-        .st-key-tema_toggle button p {{
-            color: {tema_icone} !important;
-            font-size: 1.35rem !important;
-            line-height: 1 !important;
-        }}
-
-            .entry-choice {{
-                max-width: 760px;
-                margin: 3rem auto 0;
-                padding: 2rem 2.25rem 1.75rem;
-                border: 1px solid {tema['border']};
-                border-radius: 16px;
-                background: {superficie};
-                box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
-                color: {texto_superficie};
-            }}
-
-            .entry-choice h2 {{
-                margin: 0 0 0.5rem;
-                color: {texto_superficie};
-            }}
-
-            .entry-choice p {{
-                margin: 0 0 1.5rem;
-                color: {texto_superficie};
-            }}
-
-            .st-key-entry_choice {{
-                max-width: 760px;
-                margin: 3rem auto 0;
-                padding: 2rem 2.25rem 1.75rem;
-                border: 1px solid {tema['border']} !important;
-                border-radius: 16px;
-                background: {superficie} !important;
-                box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
-            }}
-
-            .st-key-entry_choice .entry-choice {{
-                max-width: none;
-                margin: 0;
-                padding: 0;
-                border: none;
-                box-shadow: none;
-                background: transparent;
-            }}
-
-            .st-key-entry_choice button,
-            .st-key-entry_choice button[kind="primary"] {{
-                background: {superficie} !important;
-                border: 1px solid {tema['border']} !important;
-                color: {texto_superficie} !important;
-                box-shadow: none !important;
-                cursor: pointer !important;
-                transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease !important;
-            }}
-
-            .st-key-entry_choice button:hover {{
-                background: {tema['button_bg']} !important;
-                color: {tema['button_text']} !important;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
-            }}
-
-            .st-key-entry_choice button:active {{
-                transform: translateY(0);
-                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16) !important;
-            }}
-
-            .st-key-entry_choice button:focus-visible,
-            [data-testid="stDialog"] button:focus-visible {{
-                outline: 2px solid {tema['border']} !important;
-                outline-offset: 3px;
-            }}
-
-            [data-testid="stDialog"],
-            [data-testid="stDialog"] > div,
-            [data-testid="stDialog"] [role="dialog"] {{
-                background: {superficie} !important;
-                color: {texto_superficie} !important;
-            }}
-
-            [data-testid="stDialog"] [data-testid="stForm"] {{
-                background: {superficie} !important;
-            }}
-
-            [data-testid="stDialog"] label,
-            [data-testid="stDialog"] p,
-            [data-testid="stDialog"] span {{
-                color: {texto_superficie} !important;
-            }}
-
-            [data-testid="stDialog"] label {{
-                font-weight: 600 !important;
-            }}
-
-            [data-testid="stDialog"] input,
-            [data-testid="stDialog"] textarea,
-            [data-testid="stDialog"] select {{
-                background: {fundo_campo} !important;
-                border-color: {borda_modal} !important;
-                color: {texto_superficie} !important;
-                -webkit-text-fill-color: {texto_superficie} !important;
-            }}
-
-            [data-testid="stDialog"] [data-baseweb="input"] > div,
-            [data-testid="stDialog"] [data-baseweb="textarea"],
-            [data-testid="stDialog"] [data-baseweb="select"] > div {{
-                background: {fundo_campo} !important;
-                border: 1px solid {borda_modal} !important;
-                box-shadow: none !important;
-                outline: none !important;
-            }}
-
-            [data-testid="stDialog"] [data-baseweb="input"] > div:focus-within,
-            [data-testid="stDialog"] [data-baseweb="textarea"]:focus-within,
-            [data-testid="stDialog"] [data-baseweb="select"] > div:focus-within {{
-                border: 1px solid {borda_modal} !important;
-                box-shadow: 0 0 0 1px {borda_modal} !important;
-                outline: none !important;
-            }}
-
-            [data-testid="stDialog"] input::placeholder,
-            [data-testid="stDialog"] textarea::placeholder {{
-                color: {texto_superficie} !important;
-                opacity: 0.65 !important;
-            }}
-
-            [data-testid="stDialog"] button {{
-                background: {tema['button_bg']} !important;
-                border-color: {tema['border']} !important;
-                color: {tema['button_text']} !important;
-                cursor: pointer !important;
-                transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease !important;
-            }}
-
-            [data-testid="stDialog"] button * {{
-                color: {tema['button_text']} !important;
-            }}
-
-            [data-testid="stDialog"] button:hover {{
-                background: {tema['send_button_bg']} !important;
-                color: {tema['send_button_icon']} !important;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
-            }}
-
-            [data-testid="stDialog"] button:hover * {{
-                color: {tema['send_button_icon']} !important;
-            }}
-
-            section[data-testid="stSidebar"] button {{
-                transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease !important;
-            }}
-
-            section[data-testid="stSidebar"] button:hover {{
-                transform: translateX(3px);
-                box-shadow: 0 5px 14px rgba(0, 0, 0, 0.18) !important;
-            }}
-
-            /* Garante alinhamento do balão do usuário todo à direita */
-            div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{
-                flex-direction: row-reverse !important;
-                justify-content: flex-start !important;
-                margin-left: auto !important;
-                max-width: 80% !important; /* Limita a largura máxima do balão */
-                width: fit-content !important; /* Ajusta o fundo exatamente ao tamanho do texto */
-            }}
-
-            /* Ajusta as margens do avatar do usuário à direita */
-            div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageAvatarUser"] {{
-                margin-left: 0.75rem !important;
-                margin-right: 0 !important;
-            }}
-
-            /* Garante que o container de texto não ocupe 100% da tela */
-            div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{
-                width: fit-content !important;
-                max-width: 100% !important;
-                text-align: left !important; /* Mantém a leitura do texto natural */
-            }}
-            /* Aumentar o tamanho do ícone/avatar do usuário e da IA */
-            [data-testid="stChatMessageAvatarUser"],
-            [data-testid="stChatMessageAvatarAssistant"] {{
-                width: 30px !important;  /* Mude aqui o tamanho desejado (ex: 52px, 56px) */
-                height: 30px !important; /* Deve ser o mesmo valor da largura */
-                border-radius: 50% !important; /* 50% deixa perfeitamente redondo (círculo) */
-                overflow: hidden !important;
-            }}
-
-            
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+    init_state()
+    aplicar_estilo()
 
     if not img_b64:
         arquivos = []
