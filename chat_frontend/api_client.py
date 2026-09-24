@@ -123,7 +123,7 @@ def stream_message_to_ai(question: str, history: list[dict] = None):
 
     for tentativa in range(2):
         try:
-            chat = client.chats.create(model="gemini-3.6-flash")
+            chat = client.chats.create(model="gemini-1.6-flash")
             response_stream = chat.send_message_stream(
                 message=_build_ai_prompt(question, history),
             )
