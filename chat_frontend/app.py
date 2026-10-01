@@ -91,8 +91,8 @@ TEMAS = {
         "app_bg": "#FFFFFF",
         "sidebar_bg": "#030303",
         "sidebar_text": "#FFFFFF",  # <-- Cor do texto/título da sidebar no Tema Escuro
-        "text": "#000000",
-        "subtext": "#000000",
+        "text": "#FFFFFF",
+        "subtext": "#FFFFFF",
         "button_bg": "#4B4B4B",
         "button_text": "#FFFFFF",
         "input_text": "#FFFFFF",
